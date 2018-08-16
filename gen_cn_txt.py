@@ -57,26 +57,26 @@ parser.add_argument('--bgs', default=None, help='path to backgrounds')
 parser.add_argument('--fonts', default=None, help='path to fonts')
 parser.add_argument('--fh', type=int, default=48, help='pixel size to which the chars are resized')
 parser.add_argument('--output', default=None, help='path to create datasets')
-parser.add_argument('--label', required=True, help='path to words label')
+parser.add_argument('--label', default='word.txt', help='path to words label')
 parser.add_argument('--trainlabel', default=None, help='path to create train label')
 parser.add_argument('--vallabel', default=None, help='path to create val label')
-parser.add_argument('--sumnumber', type=int, default=4, help='number of word')
-parser.add_argument('--trainnum', type=int, default=3, help='number of trainword')
+parser.add_argument('--sumnumber', type=int, default=5, help='number of word')
+parser.add_argument('--trainnum', type=int, default=4, help='number of trainword')
 parser.add_argument('--str', type=str,default=timestr, help='de for datasets')
 opt = parser.parse_args()
 
 if opt.bgs is None:
-    opt.bgs = './bgs_1'
+    opt.bgs = './bgs_10'
     try:
         os.path.exists(opt.bgs)
-    except ZeroDivisionError,e:
-        print "except:",e
+    except Exception as  e:
+        print ("except:",e)
 if opt.fonts is None:
     opt.fonts = './fonts_cn'
     try:
         os.path.exists(opt.fonts)
-    except ZeroDivisionError,e:
-        print "except:",e
+    except Exception as  e:
+        print("except:", e)
 if opt.output is None:
     opt.output = './datasets' 	
 if not os.path.exists(opt.output):
@@ -233,11 +233,11 @@ def generate_bg(images_dir):
         lines = len(filenames)
         randline = random.randint(0,lines)
         loadlist = []
-        for i in xrange(0,opt.sumnumber):
+        for i in range(0,opt.sumnumber):
             loadlist.append(filenames[random.randint(0,(lines-1))])
         for fn in loadlist:
             fullfilename = os.path.join(images_dir,fn)
-            bg = cv2.imread(fullfilename, cv2.CV_LOAD_IMAGE_COLOR)
+            bg = cv2.imread(fullfilename, cv2.IMREAD_COLOR)
             bg = bg / 255.
             yield bg
 
@@ -245,7 +245,7 @@ def get_dominant_color(image):
 
     cv2.imwrite('1.jpg',image)
     image = Image.open('1.jpg').convert('RGBA')
-    max_score = None
+    max_score = 0.0
     dominant_color = None
     for count, (r, g, b, a) in image.getcolors(image.size[0] * image.size[1]):
         if a == 0:
@@ -415,11 +415,11 @@ if __name__ == '__main__':
         try:
             assert os.path.getsize(point_load) != 0
         except:
-            print "the point file is None!!!"
+            print ("the point file is None!!!")
             #return False
             sys.exit(0)
         point_file = open(point_load,'rb+')
-        point = point_file.read()
+        point = str(point_file.read())
         #print point
         cnt = int(point.split('_')[3].split('.')[0])+1
         point = point.split()[1]
@@ -432,13 +432,13 @@ if __name__ == '__main__':
         linecache.clearcache()		
         filena = linecache.getlines(WORD_TXT)[count:]             
     if filena == []:
-        print "all datasets complete!!!"
+        print( "all datasets complete!!!")
 
     fname = BGS_DIR 
     filenames = os.listdir(BGS_DIR)
     for fn in filenames:
         fullfilename = os.path.join(BGS_DIR,fn)
-        bg = cv2.imread(fullfilename, cv2.CV_LOAD_IMAGE_COLOR)
+        bg = cv2.imread(fullfilename, cv2.IMREAD_COLOR)
         imgH = 500
         h, w = bg.shape[:2]
         ratio = w / float(h)
@@ -450,12 +450,12 @@ if __name__ == '__main__':
     bgs = generate_bg(BGS_DIR)
     
     for line in filena:
-        CHARS = line.strip('\n').decode('utf-8')
+        CHARS = line.strip('\n')
         im_gen = itertools.islice(generate_ims(), num_bg_images)
         for img_idx, (im, c, bx) in enumerate(im_gen):
             im = im * 255.
             rimage ='{0}_{1:08d}.png'.format(opt.str,cnt)
-            print rimage
+            print (rimage)
             crop = im[int(bx[:, 1]):int(bx[:, 3]), int(bx[:, 0]):int(bx[:, 2]), ]
                       
             imgH = 32
@@ -463,17 +463,21 @@ if __name__ == '__main__':
             ratio = w / float(h)
             imgW = int(ratio * imgH)
             res=cv2.resize(crop,(imgW,imgH),interpolation = cv2.INTER_CUBIC)
-            cv2.imwrite(R_OUTPUT_DIR+os.sep+rimage.encode('utf-8'), res)
+            print(type(R_OUTPUT_DIR))
+            print(type(os.sep))
+            print(type(rimage.encode('utf-8')))
+            print(type(res))
+            cv2.imwrite(R_OUTPUT_DIR+os.sep+str(rimage.encode('utf-8')), res)
             if img_idx % (opt.sumnumber) <= (opt.trainnum-1):
-                Train_file.write(rimage.encode('utf-8') + ' ' + c.encode('utf-8') + '\n')
+                Train_file.write(str(str(rimage.encode('utf-8')) + ' ' + str(c.encode('utf-8')) + '\n'))
                 Train_file.flush()					
             else:
-                Test_file.write(rimage.encode('utf-8') + ' ' + c.encode('utf-8') + '\n')
+                Test_file.write(str(str(rimage.encode('utf-8')) + ' ' + str(c.encode('utf-8')) + '\n'))
                 Test_file.flush()
             cnt += 1
             point_file = open('point.txt','w')
             #print c.encode('utf-8')
-            point_file.write(rimage.encode('utf-8') + ' ' + c.encode('utf-8'))
+            point_file.write(str(str(rimage.encode('utf-8')) + ' ' + str(c.encode('utf-8'))))
             point_file.flush()
             point_file.close()
     Train_file.close()
